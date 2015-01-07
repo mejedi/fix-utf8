@@ -14,14 +14,22 @@ namespace {
 // UTF-8 continuation byte?
 inline bool utf8_contb(unsigned char c) { return (c & 0xc0) == 0x80; }
 
-}
-
-void fix_utf8(std::string &result,
-              const unsigned char *i, const unsigned char *end)
+// Templated Sink allows us to play with different methods for building
+// the output to estimate the relative efficiency of various approaches
+// (ex: a large buffer with no bounds checking vs. std::string).
+//
+// The handling of invalid bytes is also configurable via the sink.
+template <typename Sink>
+__attribute__((__always_inline__))
+const unsigned char *
+fix_utf8_engine(Sink &sink,
+                const unsigned char *i, const unsigned char *end)
 {
-    result.reserve(result.size() + end - i);
-
     while (i < end) {
+
+        // for sinks with limited capacity
+        if (!sink.check_capacity())
+            return i;
 
         // ensure the second byte is available in a multibyte UTF-8 sequence
         ASM_COMMENT("last byte of input?");
@@ -34,7 +42,7 @@ void fix_utf8(std::string &result,
                 ASM_COMMENT("1-byte");
                 // 1-byte UTF-8 sequence
                 // make output
-                result.append(i, i+1);
+                sink.template write<1>(i);
                 i += 1;
                 continue;
 
@@ -44,7 +52,7 @@ void fix_utf8(std::string &result,
                 if (!utf8_contb(i[1]))
                     goto bad_utf8;
                 // make output
-                result.append(i, i+2);
+                sink.template write<2>(i);
                 i += 2;
                 continue;
 
@@ -68,7 +76,7 @@ void fix_utf8(std::string &result,
                 if (i+2 >= end || !utf8_contb(i[1]) || !utf8_contb(i[2]))
                     goto bad_utf8;
                 // make output
-                result.append(i, i+3);
+                sink.template write<3>(i);
                 i += 3;
                 continue;
 
@@ -92,7 +100,7 @@ void fix_utf8(std::string &result,
                         !utf8_contb(i[2]) || !utf8_contb(i[3]))
                     goto bad_utf8;
                 // make output
-                result.append(i, i+4);
+                sink.template write<4>(i);
                 i += 4;
                 continue;
 
@@ -110,12 +118,72 @@ void fix_utf8(std::string &result,
         ASM_COMMENT("bad-utf8");
         // encoding just one byte even if invalid sequence was longer
         // (ok due to self-sync property of UTF-8)
-        unsigned char enc[3];
-        enc[0] = 0xed;
-        enc[1] = 0xac + (i[0]>>6);
-        enc[2] = 0x80 | (i[0] & 0x3f);
-        result.append(enc, enc+3);
+        sink.write_bad(i);
         i += 1;
         continue;
     }
+
+    return end;
+}
+
+// Helper functions to produce #1, #2 and #3 byte of the UTF8-B encoding
+inline unsigned char utf8b_1(unsigned char c) { return 0xed; }
+inline unsigned char utf8b_2(unsigned char c) { return 0xac + (c >> 6); }
+inline unsigned char utf8b_3(unsigned char c) { return 0x80 | (c & 0x3f); }
+
+// Write output to a big buffer (no bounds checking)
+// probably the fastest option
+struct big_buf_sink
+{
+    unsigned char *p_;
+    big_buf_sink(void *p): p_(static_cast<unsigned char *>(p)) {}
+    bool check_capacity() { return true; }
+    template<size_t n> void write(const unsigned char *p) {
+        for (size_t i = 0; i < n; i++)
+            p_[i] = p[i];
+        p_ += n;
+    }
+    void write_bad(const unsigned char *p) {
+        p_[0] = utf8b_1(*p);
+        p_[1] = utf8b_2(*p);
+        p_[2] = utf8b_3(*p);
+        p_ += 3;
+    }
+};
+
+// Write output to std::string
+struct std_string_sink
+{
+    std::string &s_;
+    std_string_sink(std::string &s): s_(s) {}
+    bool check_capacity() { return true; }
+    template<size_t n> void write(const unsigned char *p) {
+        s_.append(p, p+n);
+    }
+    void write_bad(const unsigned char *p) {
+        unsigned char esc[] = {
+            utf8b_1(*p),
+            utf8b_2(*p),
+            utf8b_3(*p)
+        };
+        s_.append(esc, esc + 3);
+    }
+};
+
+} // namespace {
+
+size_t fix_utf8(void *buf,
+                const unsigned char *i, const unsigned char *end)
+{
+    big_buf_sink sink(buf);
+    fix_utf8_engine(sink, i, end);
+    return sink.p_ - static_cast<const unsigned char *>(buf);
+}
+
+void fix_utf8(std::string &result,
+              const unsigned char *i, const unsigned char *end)
+{
+    result.reserve(result.size() + (end - i));
+    std_string_sink sink(result);
+    fix_utf8_engine(sink, i, end);
 }

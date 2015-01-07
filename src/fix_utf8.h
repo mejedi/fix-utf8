@@ -14,3 +14,7 @@
 // - code points in surrogates range (for unambigious decoding of UTF-8B)
 void fix_utf8(std::string &result,
               const unsigned char *i, const unsigned char *end);
+
+// Some variations
+size_t fix_utf8(void *buf,
+                const unsigned char *i, const unsigned char *end);
