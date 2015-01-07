@@ -138,18 +138,43 @@ struct big_buf_sink
     unsigned char *p_;
     big_buf_sink(void *p): p_(static_cast<unsigned char *>(p)) {}
     bool check_capacity() { return true; }
-    template<size_t n> void write(const unsigned char *p) {
-        for (size_t i = 0; i < n; i++)
-            p_[i] = p[i];
-        p_ += n;
-    }
+    template<size_t n> void write(const unsigned char *p);
     void write_bad(const unsigned char *p) {
-        p_[0] = utf8b_1(*p);
-        p_[1] = utf8b_2(*p);
-        p_[2] = utf8b_3(*p);
+        unsigned char c = p[0];
+        p_[0] = utf8b_1(c);
+        p_[1] = utf8b_2(c);
+        p_[2] = utf8b_3(c);
         p_ += 3;
     }
 };
+// Initially there used to be a single write<> implementation.
+// It contained a loop and the loop was successfully unrolled. However
+// the generated code was still inefficient since the compiler assumed
+// aliazing (p[i] was fetched from memory though it was still available
+// from a register; this was done because a store to p_[i-1] could have
+// invalidated p[i]).
+//
+// Probably it was possible to fix this issue by placing a few
+// 'restrict' keywords strategically but I didn't manage to.
+template<> void big_buf_sink::write<1>(const unsigned char *p) {
+    p_[0] = p[0];
+    p_ += 1;
+}
+template<> void big_buf_sink::write<2>(const unsigned char *p) {
+    unsigned a = p[0], b = p[1];
+    p_[0] = a; p_[1] = b;
+    p_ += 2;
+}
+template<> void big_buf_sink::write<3>(const unsigned char *p) {
+    unsigned a = p[0], b = p[1], c = p[2];
+    p_[0] = a; p_[1] = b; p_[2] = c;
+    p_ += 3;
+}
+template<> void big_buf_sink::write<4>(const unsigned char *p) {
+    unsigned a = p[0], b = p[1], c = p[2], d = p[3];
+    p_[0] = a; p_[1] = b; p_[2] = c; p_[3] = d;
+    p_ += 4;
+}
 
 // Write output to std::string
 struct std_string_sink
