@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <array>
 
+void sanity_check();
+
 typedef std::mt19937 Rnd;
 
 // a sample generator (base class)
@@ -174,6 +176,8 @@ std::string make_sample(
 
 int main()
 {
+    sanity_check();
+
     class Ts
     {
         public:
@@ -315,4 +319,43 @@ int main()
     }
 
     return 0;
+}
+
+void sanity_check()
+{
+    auto sample = make_sample(
+        1024,
+        mix(priority(4.0, utf8()), utf8_substr()));
+
+    const unsigned char *i =
+        reinterpret_cast<const unsigned char *>(sample.c_str());
+
+    const unsigned char *end = i + sample.size();
+
+    size_t                        b_res;
+    unsigned                      b_buf[1024 * 4];
+    size_t                        m_res;
+    void                         *m_buf;
+    std::string                   s_res;
+    std::vector<unsigned char>    v_res;
+
+    b_res = fix_utf8(b_buf, i, end);
+    m_res = fix_utf8(&m_buf, i, end);
+    fix_utf8(s_res, i, end);
+    fix_utf8(v_res, i, end);
+
+    if (b_res != m_res)
+        abort();
+    if (memcmp(b_buf, m_buf, b_res) != 0)
+        abort();
+
+    if (b_res != s_res.size())
+        abort();
+    if (memcmp(b_buf, s_res.c_str(), b_res) != 0)
+        abort();
+
+    if (b_res != v_res.size())
+        abort();
+    if (memcmp(b_buf, &v_res[0], b_res) != 0)
+        abort();
 }
