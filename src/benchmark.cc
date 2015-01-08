@@ -250,6 +250,16 @@ int main()
                         return stop_ts - start_ts;
                 }},
 
+                {"malloc  ", [](
+                    const unsigned char *i, const unsigned char *end) {
+                        Ts start_ts;
+                        void *p;
+                        fix_utf8(&p, i, end);
+                        Ts stop_ts;
+                        free(p);
+                        return stop_ts - start_ts;
+                }},
+
                 {"string  ", [](
                     const unsigned char *i, const unsigned char *end) {
                         Ts start_ts;
@@ -257,7 +267,7 @@ int main()
                         fix_utf8(res, i, end);
                         Ts stop_ts;
                         return stop_ts - start_ts;
-                }}
+                }},
 
             };
 

@@ -18,3 +18,5 @@ void fix_utf8(std::string &result,
 // Some variations
 size_t fix_utf8(void *buf,
                 const unsigned char *i, const unsigned char *end);
+size_t fix_utf8(void **pbuf,
+                const unsigned char *i, const unsigned char *end);

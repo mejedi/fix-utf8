@@ -1,4 +1,5 @@
 #include "fix_utf8.h"
+#include <cstdlib>
 
 // Make navigating generated assembly manageable (for dummies like me).
 // Ensure it doesn't change the generated code except for comments,
@@ -176,6 +177,25 @@ template<> void big_buf_sink::write<4>(const unsigned char *p) {
     p_ += 4;
 }
 
+// Write output to malloc-ed buf (auto grow)
+struct malloc_buf_sink: big_buf_sink
+{
+    unsigned char *begin_, *end_;
+    malloc_buf_sink(void *p, size_t size): big_buf_sink(p), begin_(p_), end_(p_+size) {}
+    bool check_capacity() {
+        if (__builtin_expect(p_ + 6 >= end_, 0)) {
+
+            size_t data_size = p_ - begin_;
+            size_t size = end_ - begin_, next_size = size + size/2;
+            void *buf = realloc(begin_, next_size);
+            begin_ = reinterpret_cast<unsigned char *>(buf);
+            end_ = begin_ + next_size;
+            p_ = begin_ + data_size;
+        }
+        return true;
+    }
+};
+
 // Write output to std::string
 struct std_string_sink
 {
@@ -205,6 +225,17 @@ size_t fix_utf8(void *buf,
     return sink.p_ - static_cast<const unsigned char *>(buf);
 }
 
+size_t fix_utf8(void **pbuf,
+                const unsigned char *i, const unsigned char *end)
+{
+    size_t size = end - i;
+    void *buf = malloc(size);
+    malloc_buf_sink sink(buf, size);
+    fix_utf8_engine(sink, i, end);
+    *pbuf = sink.begin_;
+    return sink.p_ - sink.begin_;
+}
+
 void fix_utf8(std::string &result,
               const unsigned char *i, const unsigned char *end)
 {
@@ -212,3 +243,4 @@ void fix_utf8(std::string &result,
     std_string_sink sink(result);
     fix_utf8_engine(sink, i, end);
 }
+
