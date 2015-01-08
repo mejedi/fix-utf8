@@ -282,6 +282,20 @@ int main()
                         return stop_ts - start_ts;
                 }},
 
+#if 0
+                // process in malloc buffer and then copy to string
+                {"retarded", [](
+                    const unsigned char *i, const unsigned char *end) {
+                        Ts start_ts;
+                        void *p;
+                        size_t res = fix_utf8(&p, i, end);
+                        std::string copy((const char *)p, res);
+                        free(p);
+                        Ts stop_ts;
+                        return stop_ts - start_ts;
+                }},
+#endif
+
             };
 
     std::cout << "#";
