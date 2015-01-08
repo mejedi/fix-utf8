@@ -74,8 +74,10 @@ fix_utf8_engine(Sink &sink,
             case 0xef:
                 ASM_COMMENT("3-byte");
                 // 3-byte UTF-8 sequence
-                if (i+2 >= end || !utf8_contb(i[1]) || !utf8_contb(i[2]))
+                if (i+2 >= end || !utf8_contb(i[1]))
                     goto bad_utf8;
+                if (!utf8_contb(i[2]))
+                    goto bad_utf8_2;
                 // make output
                 sink.template write<3>(i);
                 i += 3;
@@ -97,9 +99,10 @@ fix_utf8_engine(Sink &sink,
             case 0xf1 ... 0xf3:
                 ASM_COMMENT("4-byte");
                 // 4-byte UTF-8 sequence
-                if (i+3 >= end || !utf8_contb(i[1]) ||
-                        !utf8_contb(i[2]) || !utf8_contb(i[3]))
+                if (i+3 >= end || !utf8_contb(i[1]))
                     goto bad_utf8;
+                if (!utf8_contb(i[2]) || !utf8_contb(i[3]))
+                    goto bad_utf8_2;
                 // make output
                 sink.template write<4>(i);
                 i += 4;
@@ -114,6 +117,12 @@ fix_utf8_engine(Sink &sink,
                 // invalid
                 goto bad_utf8;
         }
+
+    bad_utf8_2:
+        ASM_COMMENT("bad-utf8-2");
+        // optimization in the case we know there are 2 invalid bytes
+        sink.write_bad(i);
+        i += 1;
 
     bad_utf8:
         ASM_COMMENT("bad-utf8");
