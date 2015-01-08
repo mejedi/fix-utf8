@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 
 // Fix UTF-8 byte sequence.
 // Invalid bytes are encoded in UTF-8B (using code points U+DC80..U+DCFF)
@@ -20,3 +21,5 @@ size_t fix_utf8(void *buf,
                 const unsigned char *i, const unsigned char *end);
 size_t fix_utf8(void **pbuf,
                 const unsigned char *i, const unsigned char *end);
+void fix_utf8(std::vector<unsigned char> &result,
+              const unsigned char *i, const unsigned char *end);

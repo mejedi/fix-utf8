@@ -215,6 +215,25 @@ struct std_string_sink
     }
 };
 
+// Write output to std::vector
+struct std_vector_sink
+{
+    std::vector<unsigned char> &v_;
+    std_vector_sink(std::vector<unsigned char> &v): v_(v) {}
+    bool check_capacity() { return true; }
+    template<size_t n> void write(const unsigned char *p) {
+        v_.insert(v_.end(), p, p+n);
+    }
+    void write_bad(const unsigned char *p) {
+        unsigned char esc[] = {
+            utf8b_1(*p),
+            utf8b_2(*p),
+            utf8b_3(*p)
+        };
+        v_.insert(v_.end(), esc, esc + 3);
+    }
+};
+
 } // namespace {
 
 size_t fix_utf8(void *buf,
@@ -244,3 +263,10 @@ void fix_utf8(std::string &result,
     fix_utf8_engine(sink, i, end);
 }
 
+void fix_utf8(std::vector<unsigned char> &result,
+              const unsigned char *i, const unsigned char *end)
+{
+    result.reserve(result.size() + (end - i));
+    std_vector_sink sink(result);
+    fix_utf8_engine(sink, i, end);
+}

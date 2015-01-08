@@ -269,6 +269,15 @@ int main()
                         return stop_ts - start_ts;
                 }},
 
+                {"vector  ", [](
+                    const unsigned char *i, const unsigned char *end) {
+                        Ts start_ts;
+                        std::vector<unsigned char> res;
+                        fix_utf8(res, i, end);
+                        Ts stop_ts;
+                        return stop_ts - start_ts;
+                }},
+
             };
 
     std::cout << "#";
