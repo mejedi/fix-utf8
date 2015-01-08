@@ -206,9 +206,6 @@ int main()
     // priority(val, gen) -       use in mix
     const std::vector<std::pair<std::string, std::string>> samples = {
 
-        {"Random", make_sample(sample_size,
-            bytes())},
-
         {"ASCII", make_sample(sample_size,
             bytes(0, 127))},
 
@@ -234,6 +231,9 @@ int main()
 
         {"\"Unicode(evil long)\"", make_sample(sample_size,
             utf8_substr(-1,0,0x10000,0x10ffff))},
+
+        {"Random", make_sample(sample_size,
+            bytes())},
     };
 
     // Contestants
