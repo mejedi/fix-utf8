@@ -206,21 +206,27 @@ struct malloc_buf_sink: big_buf_sink
 };
 
 // Write output to std::string
-struct std_string_sink
+struct std_string_sink: big_buf_sink
 {
     std::string &s_;
-    std_string_sink(std::string &s): s_(s) {}
-    bool check_capacity() { return true; }
-    template<size_t n> void write(const unsigned char *p) {
-        s_.append(p, p+n);
+    unsigned char *end_;
+    std_string_sink(std::string &s): big_buf_sink(0), s_(s)
+    {
+        grow(s_.size());
     }
-    void write_bad(const unsigned char *p) {
-        unsigned char esc[] = {
-            utf8b_1(*p),
-            utf8b_2(*p),
-            utf8b_3(*p)
-        };
-        s_.append(esc, esc + 3);
+    bool check_capacity()
+    {
+        if (__builtin_expect(p_ + 6 >= end_, 0)) {
+            grow(cur_off());
+        }
+        return true;
+    }
+    size_t cur_off() const { return p_ - (unsigned char *)&s_[0]; }
+    void grow(size_t cur_off)
+    {
+        s_.resize(s_.size() + 128);
+        p_ = (unsigned char *)&s_[0] + cur_off;
+        end_ = (unsigned char *)&s_[0] + s_.size();
     }
 };
 
@@ -270,6 +276,7 @@ void fix_utf8(std::string &result,
     result.reserve(result.size() + (end - i));
     std_string_sink sink(result);
     fix_utf8_engine(sink, i, end);
+    result.resize(sink.cur_off());
 }
 
 void fix_utf8(std::vector<unsigned char> &result,
