@@ -12,3 +12,8 @@ add_executable(fix_utf8_test
     src/fix_utf8_test.cc)
 
 target_link_libraries(fix_utf8_test fix_utf8 gtest_main) 
+
+add_executable(benchmark
+    src/benchmark.cc)
+
+target_link_libraries(benchmark fix_utf8)
