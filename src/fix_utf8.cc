@@ -197,7 +197,9 @@ struct malloc_buf_sink: big_buf_sink
 
             size_t data_size = p_ - begin_;
             size_t size = end_ - begin_, next_size = size + size/2;
-            void *buf = realloc(begin_, next_size);
+            void *buf = malloc(next_size);
+            memcpy(buf, begin_, data_size);
+            free(begin_);
             begin_ = reinterpret_cast<unsigned char *>(buf);
             end_ = begin_ + next_size;
             p_ = begin_ + data_size;
