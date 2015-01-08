@@ -1,0 +1,6 @@
+Generating samples...
+# Random ASCII "Unicode(small)" "Unicode(full)" "Unicode(evil mix)" "Unicode(evil short)" "Unicode(evil long)"
+baseline	 0.06127	 0.01307	 0.01816	 0.01912	 0.01909	 0.03104	 0.03781
+malloc  	 0.06909	 0.01798	 0.02068	 0.02116	 0.02095	 0.03918	 0.04684
+string  	 0.09580	 0.02791	 0.03045	 0.02575	 0.02520	 0.07871	 0.11513
+vector  	 0.12871	 0.06210	 0.04925	 0.04017	 0.04027	 0.10103	 0.15159

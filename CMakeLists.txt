@@ -3,6 +3,12 @@ project (FIX_UTF)
 add_definitions(-std=c++11)
 add_subdirectory("contrib/gtest-1.7.0")
 
+if (NOT CMAKE_BUILD_TYPE)
+set(CMAKE_BUILD_TYPE "Release")
+endif()
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
+
 include_directories("${CMAKE_SOURCE_DIR}/contrib/gtest-1.7.0/include")
 
 add_library(fix_utf8 STATIC
