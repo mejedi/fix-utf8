@@ -3,6 +3,9 @@
 #include <string>
 #include <initializer_list>
 
+std::string
+to_json_string(const std::string &s);
+
 namespace {
 
 std::string utf8_encode(unsigned long code_point, int width = 0);
@@ -28,12 +31,8 @@ std::pair<std::string,std::string>
 fix_utf8_test(std::initializer_list<SBit> bits)
 {
     SBit setup(bits);
-    std::string result;
-    const unsigned char *i =
-        reinterpret_cast<const unsigned char *>(setup.input.c_str());
-    const unsigned char *end = i + setup.input.size();
-    fix_utf8(result, i, end);
-    return std::make_pair(setup.expected_output, result);
+    return std::make_pair(setup.expected_output,
+        to_json_string(setup.input));
 }
 // UGLY, but reports the correct __LINE__
 #define fix_utf8_test(...) \

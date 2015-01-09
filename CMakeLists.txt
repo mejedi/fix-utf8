@@ -15,11 +15,13 @@ add_library(fix_utf8 STATIC
     src/fix_utf8.cc)
 
 add_executable(fix_utf8_test
+    src/json.cc
     src/fix_utf8_test.cc)
 
 target_link_libraries(fix_utf8_test fix_utf8 gtest_main) 
 
 add_executable(benchmark
+    src/json.cc
     src/benchmark.cc)
 
 target_link_libraries(benchmark fix_utf8)

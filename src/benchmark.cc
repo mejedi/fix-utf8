@@ -1,5 +1,8 @@
 #include "fix_utf8.h"
 
+std::string
+to_json_string(const std::string &s);
+
 #include <sys/time.h> // gettimeofday TODO more c++ way
 #include <cstring>
 
@@ -283,6 +286,14 @@ int main()
                         return stop_ts - start_ts;
                 }},
 
+                {"vladcvs ", [](
+                    const unsigned char *i, const unsigned char *end) {
+                        std::string in(i,end), out;
+                        Ts start_ts;
+                        out = to_json_string(in);
+                        Ts stop_ts;
+                        return stop_ts - start_ts;
+                }},
 #if 0
                 // process in malloc buffer and then copy to string
                 {"retarded", [](
