@@ -1,5 +1,6 @@
 #include "fix_utf8.h"
 #include <cstdlib>
+#include <cstring>
 
 // Make navigating generated assembly manageable (for dummies like me).
 // Ensure it doesn't change the generated code except for comments,

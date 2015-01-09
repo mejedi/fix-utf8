@@ -1,6 +1,7 @@
 #include "fix_utf8.h"
 
 #include <sys/time.h> // gettimeofday TODO more c++ way
+#include <cstring>
 
 #include <iostream>
 #include <iomanip>
